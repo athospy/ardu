@@ -1,0 +1,9 @@
+**/node_modules
+**/.env
+.git
+app
+internal-docs
+evals/.venv
+evals/results/runs
+evals/results/human
+**/logs

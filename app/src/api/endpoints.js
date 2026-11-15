@@ -9,7 +9,7 @@ export const ENDPOINTS = {
     REGISTER: '/api/auth/register',
     LOGIN: '/api/auth/login',
     LOGOUT: '/api/auth/logout',
-    REFRESH: '/api/auth/refresh-token',
+    REFRESH: '/api/auth/refresh',
   },
 
   // User Management

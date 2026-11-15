@@ -1,0 +1,12 @@
+# HTTPS (automatic Let's Encrypt) in front of the MCP server.
+{$MCP_DOMAIN} {
+	handle /mcp {
+		reverse_proxy mcp:8080
+	}
+	handle /health {
+		reverse_proxy mcp:8080
+	}
+	handle {
+		respond "Ardu MCP demo. See https://github.com/athospy/ardu" 404
+	}
+}

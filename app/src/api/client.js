@@ -6,6 +6,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { getToken, removeToken, getRefreshToken, saveToken, removeRefreshToken } from '../utils/storage';
+import { ENDPOINTS } from './endpoints';
 
 // Log the API_BASE_URL on initialization
 console.log('🔧 API Client initialized with:');
@@ -80,7 +81,7 @@ apiClient.interceptors.response.use(
         if (refreshToken) {
           // Call refresh endpoint
           const response = await axios.post(
-            `${API_BASE_URL || 'http://localhost:3000'}/api/auth/refresh-token`,
+            `${API_BASE_URL || 'http://localhost:3000'}${ENDPOINTS.AUTH.REFRESH}`,
             { refreshToken }
           );
           
