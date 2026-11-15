@@ -1,0 +1,435 @@
+{
+  "info": {
+    "name": "Ardu Backend API - Complete Collection",
+    "description": "Complete API collection for Ardu motivational quotes app including authentication, quotes, AI generation, reflections, and streaks",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check if server is running"
+          }
+        },
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.data.token);",
+                  "    console.log('✅ Token saved automatically');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.data.token);",
+                  "    console.log('✅ Token saved automatically');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with existing user credentials"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Get current user's profile information"
+          }
+        },
+        {
+          "name": "Update Motivation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivation\": \"achieving my fitness goals and living a healthy lifestyle\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/motivation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "motivation"]
+            },
+            "description": "Update user's motivation text (used for AI quote generation)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quotes",
+      "item": [
+        {
+          "name": "Get Random Quote",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotes/random",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quotes", "random"]
+            },
+            "description": "Get a random quote from the database"
+          }
+        },
+        {
+          "name": "Search Quotes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotes/search?q=success",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quotes", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "success",
+                  "description": "Search term"
+                }
+              ]
+            },
+            "description": "Search quotes by keyword"
+          }
+        },
+        {
+          "name": "Create Custom Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"My custom motivational quote about never giving up!\",\n  \"author\": \"Me\",\n  \"category\": \"personal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/quotes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quotes"]
+            },
+            "description": "Create a custom quote"
+          }
+        },
+        {
+          "name": "Toggle Favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotes/5/favorite",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quotes", "5", "favorite"]
+            },
+            "description": "Add or remove quote from favorites (replace 5 with actual quote ID)"
+          }
+        },
+        {
+          "name": "Get Favorites",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/quotes/favorites",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quotes", "favorites"]
+            },
+            "description": "Get all favorite quotes for current user"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Features",
+      "item": [
+        {
+          "name": "Generate AI Quote",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/recommended-quote",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "recommended-quote"]
+            },
+            "description": "Generate a personalized AI quote based on user's motivation"
+          }
+        },
+        {
+          "name": "Check AI Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "status"]
+            },
+            "description": "Check if AI service (Ollama) is available"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Streaks",
+      "item": [
+        {
+          "name": "Get User Streak",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/streak",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "streak"]
+            },
+            "description": "Get current user's streak data (current streak, longest streak, total reflections)"
+          }
+        },
+        {
+          "name": "Streak Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/streak/checkin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "streak", "checkin"]
+            },
+            "description": "Perform daily check-in to update streak (call when app opens)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reflections",
+      "item": [
+        {
+          "name": "Create Reflection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quoteId\": \"5\",\n  \"quoteText\": \"It does not matter how slowly you go as long as you do not stop.\",\n  \"author\": \"Confucius\",\n  \"reflection\": \"This quote reminds me to stay patient with my progress. Every small step counts!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reflections",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reflections"]
+            },
+            "description": "Save a reflection on a quote"
+          }
+        },
+        {
+          "name": "Get All Reflections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reflections?limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reflections"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Number of reflections to return"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of reflections to skip"
+                }
+              ]
+            },
+            "description": "Get all reflections for current user (paginated, newest first)"
+          }
+        },
+        {
+          "name": "Get Reflection Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reflections/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reflections", "count"]
+            },
+            "description": "Get total number of reflections for current user"
+          }
+        },
+        {
+          "name": "Delete Reflection",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reflections/REFLECTION_ID",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reflections", "REFLECTION_ID"]
+            },
+            "description": "Delete a specific reflection (replace REFLECTION_ID with actual ID)"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

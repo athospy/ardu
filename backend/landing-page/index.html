@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ardu – AI-Powered Daily Motivation</title>
+  <meta name="description" content="Ardu delivers personalized motivational quotes powered by AI at unexpected moments. Reflect, track your journey, and build positive habits." />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
+      color: #222;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 32px 20px;
+      text-align: center;
+    }
+
+    header {
+      margin-top: 40px;
+      margin-bottom: 48px;
+    }
+
+    .logo {
+      width: 96px;
+      height: 96px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: #555;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      margin: 48px 0;
+    }
+
+    .feature {
+      padding: 24px;
+      border-radius: 16px;
+      background-color: #f7f7f7;
+    }
+
+    .feature h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .feature p {
+      font-size: 15px;
+      color: #444;
+    }
+
+    .cta {
+      margin-top: 48px;
+    }
+
+    .store-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .store-button {
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      background-color: #ddd;
+      color: #777;
+      cursor: not-allowed;
+    }
+
+    .coming-soon {
+      font-size: 14px;
+      color: #666;
+      margin-top: 12px;
+    }
+
+    footer {
+      margin-top: 64px;
+      padding: 24px 0;
+      font-size: 14px;
+      color: #666;
+    }
+
+    footer a {
+      color: inherit;
+      text-decoration: underline;
+    }
+
+    .screenshots {
+      margin: 64px 0 48px;
+    }
+
+    .screenshots h2 {
+      margin-bottom: 32px;
+      font-size: 28px;
+    }
+
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .screenshot-item {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .screenshot-item:hover {
+      transform: scale(1.05);
+    }
+
+    .screenshot-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .screenshot-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .screenshot-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <header>
+      <!-- Replace with your logo -->
+      <img src="logo.png" alt="Ardu Logo" class="logo" />
+
+      <h1>Ardu</h1>
+      <p class="subtitle">
+        AI-powered motivational quotes tailored to your goals, delivered when you need them most.
+      </p>
+    </header>
+
+    <section class="features">
+      <div class="feature">
+        <h3>🤖 AI Personalization</h3>
+        <p>
+          Share your goals and get AI-generated quotes personalized to your motivation, created fresh overnight.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>✨ Random Delivery</h3>
+        <p>
+          Receive quotes at unexpected moments throughout your day — surprise motivation when you need it.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>📝 Daily Reflections</h3>
+        <p>
+          Write personal reflections on each quote. Track your growth and build self-awareness over time.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>📊 Streak Tracking</h3>
+        <p>
+          Build consistency with daily engagement streaks. Stay motivated and watch your progress grow.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>☁️ Cloud Sync</h3>
+        <p>
+          Your quotes, favorites, and reflections automatically sync across all your devices.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>🌍 Multi-Language</h3>
+        <p>
+          Available in English and Spanish. More languages coming soon.
+        </p>
+      </div>
+    </section>
+
+    <section class="screenshots">
+      <h2>See Ardu in Action</h2>
+      <div class="screenshot-grid">
+        <div class="screenshot-item">
+          <img src="screenshots/one.png" alt="Ardu Screenshot 1" />
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshots/two.png" alt="Ardu Screenshot 2" />
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshots/three.png" alt="Ardu Screenshot 3" />
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshots/four.png" alt="Ardu Screenshot 4" />
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshots/five.png" alt="Ardu Screenshot 5" />
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshots/six.png" alt="Ardu Screenshot 6" />
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshots/seven.png" alt="Ardu Screenshot 7" />
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2>Download Now</h2>
+      <p>
+        Start your journey today with AI-powered motivation.
+      </p>
+
+      <div class="store-buttons">
+        <a href="https://testflight.apple.com/join/k3rJcXGd" class="store-button" style="background-color: #000000; color: white; cursor: pointer;">📱 App Store</a>
+        <a href="https://play.google.com/apps/testing/dev.santiagomorel.ardu" class="store-button" style="background-color: #4CAF50; color: white; cursor: pointer;">🤖 Google Play (Beta)</a>
+      </div>
+
+      <p class="coming-soon">
+        Join users who are building better habits and mindsets every day.
+      </p>
+    </section>
+
+    <footer>
+      <p>
+        © 2025 Ardu ·
+        <a href="privacy.html">Privacy Policy</a>
+      </p>
+    </footer>
+
+  </div>
+
+</body>
+</html>

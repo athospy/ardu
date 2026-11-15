@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ardu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ardu_user
+      POSTGRES_PASSWORD: ardu_password
+      POSTGRES_DB: quotes_app
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - ardu_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ardu_user -d quotes_app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  ardu_network:
+    driver: bridge
