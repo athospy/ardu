@@ -8,7 +8,8 @@
  *           {"id": "en-01", "motivation": "...", "language": "en"}
  * Output: JSON Lines on stdout, one result per line:
  *           {"id": "en-01", "text": "...", "attempts": 1, "rejections": {...},
- *            "durationMs": 2310, "model": "qwen2.5:1.5b", "promptVersion": "v1"}
+ *            "durationMs": 2310, "model": "qwen2.5:1.5b", "promptVersion": "v1",
+ *            "templated": false}
  *         or {"id": "en-01", "error": "..."} if generation failed.
  *
  * Usage:
@@ -19,7 +20,7 @@
 require('dotenv').config();
 const readline = require('readline');
 const logger = require('../src/utils/logger');
-const { generateQuoteMultiStep } = require('../src/config/ollama');
+const { generateQuoteMultiStep, usesTemplate } = require('../src/config/ollama');
 const { CURRENT_VERSION } = require('../src/prompts/quote');
 
 // stdout carries the JSON results, so the app's logger must stay quiet.
@@ -53,7 +54,8 @@ async function main() {
         model,
         templateGate,
       });
-      process.stdout.write(JSON.stringify({ id: request.id, ...result }) + '\n');
+      // templated: the final quote still has a banned cliché (checked even when gate 3 is off)
+      process.stdout.write(JSON.stringify({ id: request.id, ...result, templated: usesTemplate(result.text) }) + '\n');
     } catch (error) {
       process.stdout.write(JSON.stringify({ id: request.id, error: error.message }) + '\n');
     }

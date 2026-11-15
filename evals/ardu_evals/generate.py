@@ -52,6 +52,7 @@ def generate(cases: list[dict], prompt: str, model: str, repeats: int, template_
             "attempts": result.get("attempts"),
             "rejections": result.get("rejections"),
             "duration_ms": result.get("durationMs"),
+            "templated": result.get("templated"),
             "scores": {},
         })
     return rows

@@ -124,16 +124,18 @@ def cmd_report(args) -> None:
             lines.append("")
 
     lines += ["## Generator behavior", "",
-              "| Run | quotes | avg drafts | overlap-gate rejections | template-gate rejections | avg time (s) |",
-              "|---|---|---|---|---|---|"]
+              "| Run | quotes | avg drafts | overlap-gate rejections | template-gate rejections "
+              "| final quotes with a banned cliché | avg time (s) |",
+              "|---|---|---|---|---|---|---|"]
     for name, rows in runs.items():
         ok = [r for r in rows if not r["error"]]
         rejected = sum(r["rejections"]["overlap"] for r in ok)
-        templated = sum(r["rejections"].get("template", 0) for r in ok)
+        gate3 = sum(r["rejections"].get("template", 0) for r in ok)
+        cliche = sum(1 for r in ok if r.get("templated"))
         lines.append(f"| {run_label(rows)} | {len(ok)} | {sum(r['attempts'] for r in ok) / len(ok):.2f} "
-                     f"| {rejected} ({rejected / len(ok):.0%}) | {templated} ({templated / len(ok):.0%}) "
+                     f"| {rejected} ({rejected / len(ok):.0%}) | {gate3} ({gate3 / len(ok):.0%}) | {cliche} ({cliche / len(ok):.0%}) "
                      f"| {sum(r['duration_ms'] for r in ok) / len(ok) / 1000:.1f} |")
-    lines.append("")
+    lines += ["", "Times come from a laptop that was also running the judge, so compare them loosely.", ""]
 
     calibration = HUMAN_DIR / "calibration.json"
     if calibration.exists():
