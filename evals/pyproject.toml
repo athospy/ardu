@@ -1,0 +1,19 @@
+[project]
+name = "ardu-evals"
+version = "0.1.0"
+description = "LLM-as-judge eval harness for Ardu's quote generator"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+claude = ["anthropic>=1.0"]
+
+[project.scripts]
+ardu-eval = "ardu_evals.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
