@@ -15,7 +15,7 @@ def load_cases(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def generate(cases: list[dict], prompt: str, model: str, repeats: int) -> list[dict]:
+def generate(cases: list[dict], prompt: str, model: str, repeats: int, template_gate: bool = False) -> list[dict]:
     """Return one row per (case, repeat) with the generated quote and generator stats."""
     requests = [
         {"id": f"{case['id']}#{repeat}", "motivation": case["motivation"], "language": case["language"]}
@@ -24,7 +24,8 @@ def generate(cases: list[dict], prompt: str, model: str, repeats: int) -> list[d
     ]
     stdin = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in requests)
     completed = subprocess.run(
-        ["node", "bin/generate.js", "--prompt", prompt, "--model", model],
+        ["node", "bin/generate.js", "--prompt", prompt, "--model", model,
+         "--template-gate", "on" if template_gate else "off"],
         cwd=BACKEND_DIR,
         input=stdin,
         capture_output=True,
@@ -45,6 +46,7 @@ def generate(cases: list[dict], prompt: str, model: str, repeats: int) -> list[d
             "repeat": int(repeat),
             "prompt": prompt,
             "model": model,
+            "template_gate": template_gate,
             "text": result.get("text", ""),
             "error": result.get("error"),
             "attempts": result.get("attempts"),

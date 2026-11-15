@@ -38,17 +38,23 @@ def write_rows(path: Path, rows: list[dict]) -> None:
     path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
 
 
+def variant(rows: list[dict]) -> str:
+    """Prompt version plus '+gate3' when the template gate was on."""
+    return rows[0]['prompt'] + ('+gate3' if rows[0].get('template_gate') else '')
+
+
 def run_label(rows: list[dict]) -> str:
-    return f"{rows[0]['prompt']} · {rows[0]['model']}"
+    return f"{variant(rows)} · {rows[0]['model']}"
 
 
 # ── commands ────────────────────────────────────────────────────────────────
 
 def cmd_generate(args) -> None:
     cases = load_cases(Path(args.cases))
-    out = Path(args.out) if args.out else RUNS_DIR / f"{args.prompt}__{args.model.replace(':', '-')}.jsonl"
+    suffix = '+gate3' if args.template_gate else ''
+    out = Path(args.out) if args.out else RUNS_DIR / f"{args.prompt}{suffix}__{args.model.replace(':', '-')}.jsonl"
     print(f"Generating {len(cases)} cases × {args.repeats} repeats with prompt {args.prompt} on {args.model}…")
-    rows = generate(cases, args.prompt, args.model, args.repeats)
+    rows = generate(cases, args.prompt, args.model, args.repeats, args.template_gate)
     out.parent.mkdir(parents=True, exist_ok=True)
     write_rows(out, rows)
     failed = sum(1 for r in rows if r["error"])
@@ -102,12 +108,12 @@ def cmd_report(args) -> None:
                          + f" | {s['total']['mean']:.1f} | {s['total']['quotes']} |")
         lines.append("")
 
-        # Paired before/after: same model, different prompt.
+        # Paired before/after: same model, different prompt or gate setting.
         pairs = [(a, b) for a, b in combinations(runs, 2)
-                 if runs[a][0]["model"] == runs[b][0]["model"] and runs[a][0]["prompt"] != runs[b][0]["prompt"]]
+                 if runs[a][0]["model"] == runs[b][0]["model"] and variant(runs[a]) != variant(runs[b])]
         for a, b in pairs:
-            before, after = sorted((runs[a], runs[b]), key=lambda rows: rows[0]["prompt"])
-            lines += [f"**{before[0]['prompt']} → {after[0]['prompt']} on {after[0]['model']}** (paired by case):", "",
+            before, after = sorted((runs[a], runs[b]), key=variant)
+            lines += [f"**{variant(before)} → {variant(after)} on {after[0]['model']}** (paired by case):", "",
                       "| Dimension | change | 95% CI |", "|---|---|---|"]
             comparison = {"judge": judge, "before": run_label(before), "after": run_label(after), "dims": {}}
             for dim in DIMENSIONS:
@@ -117,13 +123,16 @@ def cmd_report(args) -> None:
             summary_json["comparisons"].append(comparison)
             lines.append("")
 
-    lines += ["## Generator behavior", "", "| Run | quotes | avg drafts | overlap-gate rejections | avg time (s) |",
-              "|---|---|---|---|---|"]
+    lines += ["## Generator behavior", "",
+              "| Run | quotes | avg drafts | overlap-gate rejections | template-gate rejections | avg time (s) |",
+              "|---|---|---|---|---|---|"]
     for name, rows in runs.items():
         ok = [r for r in rows if not r["error"]]
         rejected = sum(r["rejections"]["overlap"] for r in ok)
+        templated = sum(r["rejections"].get("template", 0) for r in ok)
         lines.append(f"| {run_label(rows)} | {len(ok)} | {sum(r['attempts'] for r in ok) / len(ok):.2f} "
-                     f"| {rejected} ({rejected / len(ok):.0%}) | {sum(r['duration_ms'] for r in ok) / len(ok) / 1000:.1f} |")
+                     f"| {rejected} ({rejected / len(ok):.0%}) | {templated} ({templated / len(ok):.0%}) "
+                     f"| {sum(r['duration_ms'] for r in ok) / len(ok) / 1000:.1f} |")
     lines.append("")
 
     calibration = HUMAN_DIR / "calibration.json"
@@ -198,6 +207,7 @@ def main(argv=None) -> None:
     p.add_argument("--prompt", default="v1")
     p.add_argument("--model", default="qwen2.5:1.5b")
     p.add_argument("--repeats", type=int, default=3)
+    p.add_argument("--template-gate", action="store_true", help="turn on gate 3 (cliché/template filter)")
     p.add_argument("--cases", default=str(EVALS_DIR / "cases.jsonl"))
     p.add_argument("--out")
     p.set_defaults(func=cmd_generate)

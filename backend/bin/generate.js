@@ -13,7 +13,7 @@
  *
  * Usage:
  *   echo '{"id":"x","motivation":"learning to code","language":"en"}' \
- *     | node bin/generate.js --prompt v1 --model qwen2.5:1.5b
+ *     | node bin/generate.js --prompt v1 --model qwen2.5:1.5b [--template-gate on]
  */
 
 require('dotenv').config();
@@ -26,11 +26,11 @@ const { CURRENT_VERSION } = require('../src/prompts/quote');
 logger.silent = true;
 
 function parseArgs(argv) {
-  const args = { prompt: CURRENT_VERSION, model: process.env.OLLAMA_MODEL || 'qwen2.5:1.5b' };
+  const args = { prompt: CURRENT_VERSION, model: process.env.OLLAMA_MODEL || 'qwen2.5:1.5b', 'template-gate': 'off' };
   for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i].replace(/^--/, '');
     if (!(key in args) || argv[i + 1] === undefined) {
-      throw new Error(`Usage: generate.js [--prompt v0|v1] [--model <ollama model>] (got "${argv[i]}")`);
+      throw new Error(`Usage: generate.js [--prompt v0|v1] [--model <ollama model>] [--template-gate on|off] (got "${argv[i]}")`);
     }
     args[key] = argv[i + 1];
   }
@@ -38,7 +38,9 @@ function parseArgs(argv) {
 }
 
 async function main() {
-  const { prompt, model } = parseArgs(process.argv.slice(2));
+  const args = parseArgs(process.argv.slice(2));
+  const { prompt, model } = args;
+  const templateGate = args['template-gate'] === 'on';
   const lines = readline.createInterface({ input: process.stdin });
 
   // One request at a time: a small model on a laptop or VPS is the bottleneck.
@@ -49,6 +51,7 @@ async function main() {
       const result = await generateQuoteMultiStep(request.motivation, request.language, [], {
         promptVersion: prompt,
         model,
+        templateGate,
       });
       process.stdout.write(JSON.stringify({ id: request.id, ...result }) + '\n');
     } catch (error) {

@@ -100,6 +100,24 @@ function lexicalOverlap(a, b) {
 }
 
 /**
+ * Cliché openers and template phrases that small models fall back to, in the
+ * two app languages. The v1 prompt already bans these; gate 3 enforces it.
+ */
+const TEMPLATE_PATTERNS = [
+  /^\s*(empower|unleash|embrace|unlock|ignite|awaken)/i,
+  /^\s*(empod[eé]rate|desbloquea|abraza|despierta|sana|vuela)/i,
+  /\bone\s+(\w+\s+)?(step|day|\w+)\s+at\s+a\s+time\b/i,
+  /\byour\s+(journey|potential)\b/i,
+  /\bpaso\s+a\s+paso\b/i,
+  /\bun[ao]?\s+\p{L}+\s+a\s+la\s+vez/iu, // \p{L}: accented words like lección
+  /\btu\s+(viaje|potencial)\b/i,
+];
+
+function usesTemplate(text) {
+  return TEMPLATE_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+/**
  * Simple text generation for single-purpose prompts
  * No JSON, no complex formatting - just clean text output
  */
@@ -485,12 +503,16 @@ const testConnection = async () => {
  *                        motivation. High = the model just echoed the input.
  *   Gate 2 (similarity): shared words / words in the larger of the two texts,
  *                        against each of the user's recent quotes. High = repeat.
+ *   Gate 3 (template, optional, off by default): the draft uses a cliché
+ *                        opener or template phrase the prompt already bans
+ *                        (small models don't always follow the ban).
  *
  * options.promptVersion / options.model override the production defaults
- * (used by the eval harness and the MCP demo).
+ * (used by the eval harness and the MCP demo); options.templateGate turns
+ * gate 3 on.
  *
- * Returns: { text, attempts, rejections: { overlap, similarity }, durationMs,
- *            model, promptVersion }
+ * Returns: { text, attempts, rejections: { overlap, similarity, template },
+ *            durationMs, model, promptVersion, templateGate }
  */
 async function generateQuoteMultiStep(motivation, language = 'en', existingQuotes = [], options = {}) {
   try {
@@ -498,11 +520,11 @@ async function generateQuoteMultiStep(motivation, language = 'en', existingQuote
     const SIMILARITY_THRESHOLD = 0.75; // Lower from 0.85
     const OVERLAP_THRESHOLD = 0.3;     // Lower from 0.4
 
-    const { promptVersion = CURRENT_VERSION, model = OLLAMA_MODEL } = options;
+    const { promptVersion = CURRENT_VERSION, model = OLLAMA_MODEL, templateGate = false } = options;
     const start = Date.now();
     let text;
     let attempts = 0;
-    const rejections = { overlap: 0, similarity: 0 };
+    const rejections = { overlap: 0, similarity: 0, template: 0 };
 
     logger.info(`🎯 Generating quote for: "${motivation.substring(0, 30)}..."`);
 
@@ -531,6 +553,14 @@ async function generateQuoteMultiStep(motivation, language = 'en', existingQuote
         });
         logger.info(`   ⚠️  Too similar to prompt (${(overlap * 100).toFixed(1)}% overlap), regenerating...`);
         rejections.overlap++;
+        continue;
+      }
+
+      // Gate 3 (optional): cliché openers / template phrases
+      if (templateGate && usesTemplate(text) && attempts < MAX_ATTEMPTS) {
+        aiDebug('TEMPLATE_CHECK', { decision: 'REJECTED_TEMPLATE', generated: text });
+        logger.info('   ⚠️  Template phrase, regenerating...');
+        rejections.template++;
         continue;
       }
       
@@ -582,6 +612,7 @@ async function generateQuoteMultiStep(motivation, language = 'en', existingQuote
       durationMs: duration,
       model,
       promptVersion,
+      templateGate,
     };
 
     aiDebug('FINAL_RESULT', {
@@ -607,5 +638,6 @@ module.exports = {
   similarity, // Export for testing
   lexicalOverlap,
   normalize,
+  usesTemplate,
   stripWrappingQuotes,
 };

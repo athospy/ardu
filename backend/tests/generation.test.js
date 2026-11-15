@@ -21,6 +21,7 @@ const {
   lexicalOverlap,
   normalize,
   stripWrappingQuotes,
+  usesTemplate,
 } = require('../src/config/ollama');
 const { getPrompt, CURRENT_VERSION, VERSIONS } = require('../src/prompts/quote');
 
@@ -83,7 +84,7 @@ describe('generateQuoteMultiStep gates', () => {
     const result = await generateQuoteMultiStep('learning to code and switching careers', 'en', []);
     expect(result.text).toBe('Every bug you fix is rent paid on your new career.');
     expect(result.attempts).toBe(1);
-    expect(result.rejections).toEqual({ overlap: 0, similarity: 0 });
+    expect(result.rejections).toEqual({ overlap: 0, similarity: 0, template: 0 });
     expect(result.promptVersion).toBe(CURRENT_VERSION);
   });
 
@@ -92,7 +93,7 @@ describe('generateQuoteMultiStep gates', () => {
     const result = await generateQuoteMultiStep('learning to code and switching careers', 'en', []);
     expect(result.text).toBe('Every bug you fix pays rent on the future.');
     expect(result.attempts).toBe(2);
-    expect(result.rejections).toEqual({ overlap: 1, similarity: 0 });
+    expect(result.rejections).toEqual({ overlap: 1, similarity: 0, template: 0 });
   });
 
   test('gate 2 regenerates a draft that repeats an existing quote', async () => {
@@ -100,7 +101,7 @@ describe('generateQuoteMultiStep gates', () => {
     mockDrafts.push('Small daily wins build a big new life.', 'Tonight’s practice is tomorrow’s promotion.');
     const result = await generateQuoteMultiStep('getting a better job', 'en', [existing]);
     expect(result.text).toBe('Tonight’s practice is tomorrow’s promotion.');
-    expect(result.rejections).toEqual({ overlap: 0, similarity: 1 });
+    expect(result.rejections).toEqual({ overlap: 0, similarity: 1, template: 0 });
   });
 
   test('keeps the last draft after the maximum attempts, even if it fails a gate', async () => {
@@ -115,5 +116,42 @@ describe('generateQuoteMultiStep gates', () => {
     mockDrafts.push('word '.repeat(80));
     const result = await generateQuoteMultiStep('patience', 'en', []);
     expect(result.text.length).toBeLessThanOrEqual(200);
+  });
+});
+
+describe('gate 3: template filter', () => {
+  test.each([
+    'Embrace the code, your future is calling.',
+    'Unlocking new skills every night.',
+    'Empodérate con cada línea de código.',
+    'Build your career one bug at a time.',
+    'Trust your journey into tech.',
+    'Aprende paso a paso.',
+    'Una lección a la vez, llegarás.',
+    'Confía en tu potencial.',
+  ])('flags "%s"', (text) => {
+    expect(usesTemplate(text)).toBe(true);
+  });
+
+  test.each([
+    'Every bug you fix pays rent on your new career.',
+    'Cada error que corriges es una clase gratis.',
+    'She embraced the challenge.', // only banned as an opener
+  ])('allows "%s"', (text) => {
+    expect(usesTemplate(text)).toBe(false);
+  });
+
+  test('is off by default (production behavior unchanged)', async () => {
+    mockDrafts.push('Embrace the code, your future is calling.');
+    const result = await generateQuoteMultiStep('learning to program', 'en', []);
+    expect(result.attempts).toBe(1);
+    expect(result.templateGate).toBe(false);
+  });
+
+  test('when on, regenerates a templated draft', async () => {
+    mockDrafts.push('Embrace the code, your future is calling.', 'Every bug you fix pays rent on tomorrow.');
+    const result = await generateQuoteMultiStep('learning to program', 'en', [], { templateGate: true });
+    expect(result.text).toBe('Every bug you fix pays rent on tomorrow.');
+    expect(result.rejections.template).toBe(1);
   });
 });
