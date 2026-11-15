@@ -1,5 +1,6 @@
 const { Ollama } = require('ollama');
 const logger = require('../utils/logger');
+const { getPrompt, CURRENT_VERSION } = require('../prompts/quote');
 
 // Initialize Ollama client with increased timeout for AI generation
 const ollama = new Ollama({
@@ -60,9 +61,9 @@ function stripWrappingQuotes(text) {
 
   return text
     .trim()
-    // Remove leading & trailing straight or curly quotes
-    .replace(/^["'""]+/, '')
-    .replace(/["'""]+$/, '')
+    // Remove leading & trailing straight, curly or Spanish (« ») quotes
+    .replace(/^["'“”‘’«»]+/, '')
+    .replace(/["'“”‘’«»]+$/, '')
     .trim();
 }
 
@@ -102,25 +103,21 @@ function lexicalOverlap(a, b) {
  * Simple text generation for single-purpose prompts
  * No JSON, no complex formatting - just clean text output
  */
-async function simpleGenerate(prompt, stepName = 'generate') {
+async function simpleGenerate(prompt, stepName = 'generate', { model = OLLAMA_MODEL, options } = {}) {
   const start = Date.now();
 
   aiDebug(stepName, {
     event: 'START',
-    model: OLLAMA_MODEL,
+    model,
     prompt_length: prompt.length,
     prompt_full: truncate(prompt),
   });
 
   const response = await ollama.generate({
-    model: OLLAMA_MODEL,
+    model,
     prompt,
     stream: true,
-    options: {
-      temperature: 0.8,
-      num_predict: 60,  // Bumped from 40 — specific quotes need more tokens
-      stop: ['\n'],
-    },
+    options,
   });
 
   let result = '';
@@ -146,34 +143,16 @@ async function simpleGenerate(prompt, stepName = 'generate') {
 }
 
 /**
- * Generate quote text only (simplified for small models)
+ * Generate quote text only (simplified for small models).
+ * The prompt text and sampling options live in src/prompts/quote/; production
+ * uses the current version, the eval harness can pick another one.
  */
-async function generateQuoteText(motivation, language = 'en') {
-  const prompt = language === 'es'
-    ? `Escribe UNA frase motivacional corta y específica sobre este tema:
-"${motivation}"
-
-Reglas obligatorias:
-- La frase DEBE mencionar algo concreto del tema
-- Máximo 120 caracteres, una sola oración
-- NO empieces con: Empodérate, Desbloquea, Abraza, Despierta, Sana, Vuela
-- NO uses: "paso a paso", "un X a la vez", "tu viaje", "tu potencial"
-- Sin comillas alrededor de la frase
-
-Devuelve SOLO la frase:`
-    : `Write ONE short motivational quote specifically about:
-"${motivation}"
-
-Required rules:
-- The quote MUST reference something concrete from the topic above
-- Max 120 characters, one sentence
-- DO NOT start with: Empower, Unleash, Embrace, Unlock, Ignite, Awaken
-- DO NOT use: "one step at a time", "one X at a time", "your journey", "your potential"
-- No wrapping quotes
-
-Return ONLY the quote:`;
-
-  return simpleGenerate(prompt, 'QUOTE_TEXT');
+async function generateQuoteText(motivation, language = 'en', { promptVersion, model } = {}) {
+  const prompt = getPrompt(promptVersion);
+  return simpleGenerate(prompt.build(motivation, language), 'QUOTE_TEXT', {
+    model,
+    options: prompt.options,
+  });
 }
 
 
@@ -498,25 +477,39 @@ const testConnection = async () => {
 };
 
 /**
- * Simple quote generation with similarity checking
- * Returns: { text }
+ * Simple quote generation with similarity checking.
+ *
+ * Each draft passes two gates; a draft that fails one is regenerated, up to
+ * MAX_ATTEMPTS drafts in total (the last draft is kept even if it fails):
+ *   Gate 1 (overlap):    share of the draft's words that also appear in the
+ *                        motivation. High = the model just echoed the input.
+ *   Gate 2 (similarity): shared words / words in the larger of the two texts,
+ *                        against each of the user's recent quotes. High = repeat.
+ *
+ * options.promptVersion / options.model override the production defaults
+ * (used by the eval harness and the MCP demo).
+ *
+ * Returns: { text, attempts, rejections: { overlap, similarity }, durationMs,
+ *            model, promptVersion }
  */
-async function generateQuoteMultiStep(motivation, language = 'en', existingQuotes = []) {
+async function generateQuoteMultiStep(motivation, language = 'en', existingQuotes = [], options = {}) {
   try {
     const MAX_ATTEMPTS = 2;           // Lower from 3
     const SIMILARITY_THRESHOLD = 0.75; // Lower from 0.85
     const OVERLAP_THRESHOLD = 0.3;     // Lower from 0.4
-    
+
+    const { promptVersion = CURRENT_VERSION, model = OLLAMA_MODEL } = options;
     const start = Date.now();
     let text;
     let attempts = 0;
+    const rejections = { overlap: 0, similarity: 0 };
 
     logger.info(`🎯 Generating quote for: "${motivation.substring(0, 30)}..."`);
 
     // Generate text with overlap + similarity checking
     do {
       logger.info(`📝 Generating (attempt ${attempts + 1}/${MAX_ATTEMPTS})...`);
-      text = await generateQuoteText(motivation, language);
+      text = await generateQuoteText(motivation, language, { promptVersion, model });
       logger.info(`   Generated: "${text}"`);
       attempts++;
       
@@ -537,6 +530,7 @@ async function generateQuoteMultiStep(motivation, language = 'en', existingQuote
           max_attempts: MAX_ATTEMPTS,
         });
         logger.info(`   ⚠️  Too similar to prompt (${(overlap * 100).toFixed(1)}% overlap), regenerating...`);
+        rejections.overlap++;
         continue;
       }
       
@@ -566,6 +560,7 @@ async function generateQuoteMultiStep(motivation, language = 'en', existingQuote
             max_attempts: MAX_ATTEMPTS,
           });
           logger.info(`   ⚠️  Too similar to existing, regenerating...`);
+          rejections.similarity++;
           continue;
         } else {
           if (!isTooSimilar) {
@@ -582,6 +577,11 @@ async function generateQuoteMultiStep(motivation, language = 'en', existingQuote
     const duration = Date.now() - start;
     const result = {
       text: text.slice(0, 200), // Enforce max length
+      attempts,
+      rejections,
+      durationMs: duration,
+      model,
+      promptVersion,
     };
 
     aiDebug('FINAL_RESULT', {
@@ -605,4 +605,7 @@ module.exports = {
   generateBatchQuotes,
   testConnection,
   similarity, // Export for testing
+  lexicalOverlap,
+  normalize,
+  stripWrappingQuotes,
 };
