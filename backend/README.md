@@ -1,157 +1,52 @@
-# Ardu Backend - Motivational Quotes API
+# Ardu backend
 
-Backend API for a motivational quotes mobile application with AI-powered recommendations using Ollama.
+Express API for the Ardu app: JWT auth, the quote library, favorites, reflections and streaks, plus
+two scheduled jobs that generate personalized quotes with Ollama (`qwen2.5:1.5b`) and send push
+notifications. The [main README](../README.md) explains the generation pipeline and the evals;
+[docs/deploy.md](../docs/deploy.md) covers running it on a server.
 
-## Features
+## Run it
 
-- 🔐 User authentication with JWT
-- 👤 User profile management with personalized motivation
-- 💬 AI-generated quote recommendations (Ollama)
-- 📱 Push notifications via Expo
-- ⭐ Favorite quotes management
-- 🌍 Multi-language support
-- 🔄 Random quote delivery
-- 📊 Notification history tracking
-
-## Prerequisites
-
-- Node.js >= 18.0.0
-- PostgreSQL >= 14
-- Ollama installed locally (for AI features)
-
-## Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd ardu_backend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+npm install
+npm run dev:docker      # Postgres in Docker, then migrations, then the API on :3000 with nodemon
+npm run seed            # the curated quote library (English and Spanish)
+ollama pull qwen2.5:1.5b
+npx jest                # unit tests; Ollama is mocked
 ```
 
-4. Create PostgreSQL database:
-```bash
-createdb quotes_app
-```
+Without Docker: point `DATABASE_URL` (or the `DB_*` variables) at your own Postgres, then
+`npm run migrate`, `npm run seed` and `npm run dev`. `npm run migrate` records each migration in a
+`migrations` table, so it is safe to run again.
 
-5. Run database migrations:
-```bash
-npm run migrate
-```
+## API
 
-6. Seed default quotes (optional):
-```bash
-npm run seed
-```
+All routes are under `/api`. 🔒 = needs `Authorization: Bearer <access token>`.
 
-## Running the Server
+| Area | Routes |
+|---|---|
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, 🔒 `POST /auth/logout` |
+| Profile | 🔒 `GET /users/profile`, 🔒 `PUT /users/profile`, 🔒 `PUT /users/motivation`, 🔒 `PUT /users/push-token` |
+| Streaks | 🔒 `GET /users/streak`, 🔒 `POST /users/streak/checkin` |
+| Quotes | `GET /quotes/random`, `GET /quotes/search`, 🔒 `GET /quotes/favorites`, 🔒 `POST /quotes/:id/favorite`, 🔒 `POST /quotes/initialize`, 🔒 `POST /quotes`, 🔒 `DELETE /quotes/:id` |
+| Reflections | 🔒 `GET /reflections`, 🔒 `GET /reflections/count`, 🔒 `POST /reflections`, 🔒 `DELETE /reflections/:id` |
 
-### Development mode:
-```bash
-npm run dev
-```
+`GET /health` (outside `/api`) reports that the server is up. The `ai` and `notifications` route
+files aren't mounted: AI quotes and push notifications run only as scheduled jobs.
 
-### Production mode:
-```bash
-npm start
-```
-
-The server will start on `http://localhost:3000` (or your configured PORT).
-
-## Setting up Ollama
-
-1. Install Ollama from https://ollama.ai
-2. Pull a model:
-```bash
-ollama pull llama2
-# or
-ollama pull mistral
-```
-
-3. Ensure Ollama is running:
-```bash
-ollama serve
-```
-
-## API Documentation
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-
-### User Profile
-- `GET /api/users/profile` - Get user profile (protected)
-- `PUT /api/users/profile` - Update profile (protected)
-- `PUT /api/users/motivation` - Update motivation text (protected)
-
-### Quotes
-- `GET /api/quotes` - Get all quotes
-- `GET /api/quotes/random` - Get random quote
-- `GET /api/quotes/favorites` - Get user favorites (protected)
-- `POST /api/quotes/:id/favorite` - Toggle favorite (protected)
-
-### AI Recommendations
-- `GET /api/ai/recommended-quote` - Get AI-generated quote (protected)
-
-### Notifications
-- `GET /api/notifications/history` - Get notification history (protected)
-- `POST /api/notifications/test` - Send test notification (protected)
-
-## Project Structure
+## Layout
 
 ```
-ardu_backend/
-├── src/
-│   ├── config/          # Configuration files
-│   ├── controllers/     # Request handlers
-│   ├── middleware/      # Express middleware
-│   ├── models/          # Database models
-│   ├── routes/          # API routes
-│   ├── services/        # Business logic
-│   ├── utils/           # Helper functions
-│   ├── jobs/            # Scheduled jobs
-│   └── app.js           # Main application file
-├── migrations/          # Database migrations
-├── seeds/               # Database seeds
-└── tests/               # Test files
+src/
+  app.js            Express setup, routes, starts the two jobs
+  config/           database pool, Ollama client and the quote generator (ollama.js)
+  prompts/quote/    versioned prompt templates (v0, v1)
+  jobs/             node-cron schedules: AI quotes, notifications
+  controllers/  routes/  middleware/  services/  utils/
+bin/generate.js     JSON Lines CLI around the generator (used by the evals)
+scripts/            the AI quote job and small maintenance scripts
+migrations/         SQL schema, run in order by migrations/run.js
+seeds/              the curated quote library
+tests/              Jest tests for the generator and its gates
 ```
-
-## Testing
-
-```bash
-npm test
-```
-
-## Environment Variables
-
-See `.env.example` for all required environment variables.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-MIT
-# ardu_backend
-
-
-📊 Database Connection Details
-Host: localhost
-Port: 5432
-Database: quotes_app
-Username: ardu_user
-Password: ardu_password

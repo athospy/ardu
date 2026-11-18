@@ -246,42 +246,6 @@
       ]
     },
     {
-      "name": "AI Features",
-      "item": [
-        {
-          "name": "Generate AI Quote",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/ai/recommended-quote",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "recommended-quote"]
-            },
-            "description": "Generate a personalized AI quote based on user's motivation"
-          }
-        },
-        {
-          "name": "Check AI Status",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/ai/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "status"]
-            },
-            "description": "Check if AI service (Ollama) is available"
-          }
-        }
-      ]
-    },
-    {
       "name": "Streaks",
       "item": [
         {
