@@ -13,6 +13,7 @@ const {
 const { protect } = require('../middleware/auth');
 const {
   motivationValidation,
+  profileValidation,
   pushTokenValidation,
 } = require('../utils/validators');
 
@@ -20,10 +21,11 @@ const {
 router.use(protect);
 
 router.get('/profile', getProfile);
-// SECURITY: Disabled unused endpoints (not called by mobile app)
-// router.put('/profile', updateProfile);
+// The app's Settings screen calls this for the notifications switch.
+router.put('/profile', profileValidation, updateProfile);
 router.put('/motivation', motivationValidation, updateMotivation);
 router.put('/push-token', pushTokenValidation, updatePushToken);
+// SECURITY: Disabled unused endpoints (not called by mobile app)
 // router.put('/preferences', updatePreferences);
 // router.delete('/profile', deleteAccount);
 

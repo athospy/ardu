@@ -50,6 +50,17 @@ const motivationValidation = [
   validate,
 ];
 
+// Profile update validation (the Settings screen's notifications switch)
+const profileValidation = [
+  body('name').optional().trim().isLength({ min: 1, max: 100 })
+    .withMessage('Name must be between 1 and 100 characters'),
+  body('language').optional().isIn(['en', 'es'])
+    .withMessage('Language must be en or es'),
+  body('notificationEnabled').optional().isBoolean({ strict: true })
+    .withMessage('notificationEnabled must be true or false'),
+  validate,
+];
+
 // Push token validation
 const pushTokenValidation = [
   body('expoPushToken')
@@ -107,6 +118,7 @@ module.exports = {
   registerValidation,
   loginValidation,
   motivationValidation,
+  profileValidation,
   pushTokenValidation,
   quoteValidation,
   paginationValidation,
