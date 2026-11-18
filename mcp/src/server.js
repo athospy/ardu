@@ -43,7 +43,7 @@ export function buildServer({ db, generate, evalSummaryPath }) {
     title: 'Generate a motivational quote',
     description:
       'Writes one short motivational quote about the given motivation, using Ardu\'s self-hosted small '
-      + 'language model and the same prompt and similarity gates as the production app. Takes a few seconds. '
+      + 'language model with the same prompt and overlap gate as the production app. Takes about 10 seconds. '
       + 'Nothing is saved: the motivation and the quote are not stored.',
     inputSchema: {
       motivation: z.string().trim().min(3).max(300)

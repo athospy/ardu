@@ -8,7 +8,7 @@ const ollama = new Ollama({
   timeout: 300000, // 5 minutes timeout for AI generation
 });
 
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:1.5b';
 
 /**
  * Structured AI debug logging helper
@@ -503,7 +503,8 @@ const testConnection = async () => {
  *   Gate 1 (overlap):    share of the draft's words that also appear in the
  *                        motivation. High = the model just echoed the input.
  *   Gate 2 (similarity): shared words / words in the larger of the two texts,
- *                        against each of the user's recent quotes. High = repeat.
+ *                        against each recent quote passed in (the quote job passes
+ *                        the 200 newest AI quotes, all users). High = repeat.
  *   Gate 3 (template, optional, off by default): the draft uses a cliché
  *                        opener or template phrase the prompt already bans
  *                        (small models don't always follow the ban).

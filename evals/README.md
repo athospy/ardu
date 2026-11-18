@@ -33,7 +33,7 @@ cases.jsonl ──▶ backend/bin/generate.js ──▶ results/runs/*.jsonl ─
 ```bash
 uv sync --extra claude          # --extra claude only if you want the Claude judge
 uv run pytest -q                # harness unit tests, no model needed
-./scripts/run-all.sh            # every published number with the local judge
+./scripts/run-all.sh            # re-run every experiment (Claude judge if ANTHROPIC_API_KEY is set)
 ```
 
 Single steps:
@@ -54,7 +54,7 @@ See [results/REPORT.md](results/REPORT.md) (generated) and the summary in the
 
 ## History
 
-`backend/scripts/gradePrompt.js` (May 2026) was the first version: 8 cases, one run, llama3 judge.
+The first grader (a single script, May 2026, not included here) used 8 cases, one run and a llama3 judge.
 It reported a relevance gain, but it set the generator model through an environment variable
 *after* the generator module had already read it, so it most likely generated with the model in
 `.env` (llama3 8B) rather than `qwen2.5:1.5b`, with llama3 also judging its own output. This

@@ -40,8 +40,12 @@ flowchart LR
 2. Stream the completion from Ollama. Streaming keeps the HTTP connection alive on a slow CPU box.
 3. Run two cheap gates on the draft. A failed draft is regenerated (up to 2 drafts in total):
    - **Overlap gate:** share of the draft's words that also appear in the motivation. Above 30%, the model just echoed the input.
-   - **Similarity gate:** shared words divided by the larger quote's word count, compared against the person's recent quotes. Above 75%, it's a repeat.
+   - **Similarity gate:** shared words divided by the larger quote's word count, compared against the 200 most recent AI quotes (all users). Above 75%, it's a repeat.
 4. Strip wrapping quotes and save the result.
+
+Known limitation: the gates first normalize text with a regex that drops accented letters (`más` → `ms`,
+`niño` → `nio`), so for Spanish they compare slightly damaged words. Fixing it changes gate behavior,
+so it needs its own eval run first.
 
 ## Evals: what prompt tuning fixed, and what it didn't
 
@@ -79,11 +83,13 @@ What this shows:
 5. **The prompt fights its own gate.** v1 asks for a concrete reference to the motivation, and the
    overlap gate rejects drafts that reuse too many of its words: 43% of v1 quotes needed a retry (12% for v0).
 
-**How far to trust the judges.** The 8B judge gave every quote the lowest originality and inspiration
-score, so it can't tell configurations apart. Claude agrees with the human scorer more often than
-llama3 on every dimension, but still only slightly: quadratic-weighted kappa 0.06–0.20, within one
-point 83–93% of the time, and it is much stricter on originality and inspiration. Read the table as
-direction, not as calibrated quality. 30 human-scored quotes from one person is a small check.
+**How far to trust the judges.** The 8B judge gave every quote the lowest originality score and almost
+every quote the lowest inspiration score, so it can't tell configurations apart on those. Claude's
+agreement with the human scorer (quadratic-weighted kappa) is higher than llama3's on every dimension,
+but still only slight: kappa 0.06–0.20, within one point 83–93% of the time, and Claude is much
+stricter on originality and inspiration. Read the table as direction, not as calibrated quality.
+The human check is small: 30 quotes, one person, 18 from v0 and 12 from v1 (not paired by
+motivation). On that sample v1 also scored a little lower on originality (−0.31) and inspiration (−0.14).
 
 An earlier grader (May 2026) reported a large relevance gain. It set the generator model after the
 code had already read it, so it most likely tested the wrong model; [`evals/README.md`](evals/README.md)
@@ -95,7 +101,7 @@ has the details. This harness passes the model explicitly and replaces it.
 
 | Tool | What it does |
 |---|---|
-| `generate_quote(motivation, language)` | Runs the production generator (same prompt, model and gates) and returns the quote, drafts used and timing. Saves nothing. |
+| `generate_quote(motivation, language)` | Runs the production generator (same prompt, model and overlap gate) and returns the quote, drafts used and timing. Saves nothing. |
 | `search_quotes(query, language?, limit?)` | Searches the curated quote library by text, author or category. |
 | `random_quote(language?, category?)` | One random quote from the library. |
 | `get_stats()` | Library size, demo generation stats (volume, latency, gate retries) and the latest eval scores. |
@@ -126,6 +132,33 @@ In claude.ai: **Customize → Connectors → Add custom connector**. Set the URL
 `https://<your-domain>/mcp` and Authentication to *No sign-in*. Then add a request header
 `authorization` with the value `Bearer <MCP_TOKEN>`.
 
+**A session with the hosted demo** (recorded 2026-11-17; long outputs shortened with …):
+
+```text
+> generate_quote(motivation: "finishing my first half marathon in under two hours", language: "en")
+{ "quote": "Finish each mile in your own way, crush my first half marathon in under two hours!",
+  "model": "qwen2.5:1.5b", "prompt_version": "v1", "drafts": 2,
+  "rejected_drafts": { "overlap": 1, "similarity": 0, "template": 0 }, "seconds": 9.4 }
+
+> generate_quote(motivation: "volver a estudiar inglés después de diez años", language: "es")
+{ "quote": "Volviendo a estudiar inglés, cada nuevo día es una nueva oportunidad.",
+  "model": "qwen2.5:1.5b", "prompt_version": "v1", "drafts": 1,
+  "rejected_drafts": { "overlap": 0, "similarity": 0, "template": 0 }, "seconds": 9.5 }
+
+> search_quotes(query: "fear", limit: 2)
+"Everything you've ever wanted is on the other side of fear." — George Addair [courage, en]
+
+> get_stats()
+{ "library": [ { "language": "en", "category": "action", "count": 5 }, … ],      // 50 quotes, en + es
+  "generation": [ { "model": "qwen2.5:1.5b", "total": 4, "failed": 0, "avg_duration_ms": 9855,
+                    "avg_drafts": 1.25, "overlap_gate_retries": 1, "similarity_gate_retries": 0 } ],
+  "evals": [ { "run": "v1 · gemma3:4b", "scores": { "claude:claude-opus-5-5": { "total_of_12": 8.63, … } } }, … ] }
+```
+
+The first call shows both sides of the 1.5B model: the overlap gate rejected a draft that copied the
+motivation, and the second draft still slipped into first person ("crush **my** first half marathon").
+Each generation takes about 10 seconds on the demo's 2-vCPU, CPU-only server.
+
 ## Run it locally
 
 Requirements: Node 20+, Docker, [Ollama](https://ollama.com), and [uv](https://docs.astral.sh/uv/) for the evals.
@@ -148,7 +181,7 @@ echo '{"id":"1","motivation":"learning to code","language":"en"}' | node bin/gen
 # Evals
 cd ../evals
 uv run pytest -q                    # harness unit tests
-./scripts/run-all.sh                # every published number (~1 hour on an M-series Mac)
+./scripts/run-all.sh                # re-run every experiment (~1 hour on an M-series Mac)
 
 # MCP server tests
 cd ../mcp && npm install && npm test
@@ -165,7 +198,10 @@ backend/    Express API, Postgres migrations, quote generator, cron jobs
 evals/      Python eval harness, test cases, results
 mcp/        MCP server (stdio + Streamable HTTP)
 deploy/     Docker Compose stack for the hosted MCP demo
+docs/       Deployment guide (backend and MCP demo)
 ```
+
+To run it on a server, see [docs/deploy.md](docs/deploy.md).
 
 ## License
 
