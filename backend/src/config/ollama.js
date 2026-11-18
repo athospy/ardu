@@ -79,7 +79,8 @@ function normalize(text) {
 }
 
 /**
- * Calculate similarity between two texts using Jaccard similarity
+ * Similarity between two texts: shared words divided by the size of the larger
+ * word set (not Jaccard, which divides by the union).
  * Returns 0 (completely different) to 1 (identical)
  */
 function similarity(a, b) {
