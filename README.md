@@ -45,7 +45,49 @@ flowchart LR
 
 ## Evals: what prompt tuning fixed, and what it didn't
 
-EVAL_RESULTS_PLACEHOLDER
+Every configuration generated 60 quotes (20 motivations, 10 English and 10 Spanish, × 3 runs) through
+the production code path ([`backend/bin/generate.js`](backend/bin/generate.js)). Two LLM judges scored
+each quote 1–3 on relevance, originality, inspiration and clarity: a local `llama3` 8B and Claude
+(`claude-opus-5-5`). Then a human scored 30 of the quotes blind, to check the judges.
+Method and commands: [`evals/`](evals/). Every number: [`evals/results/REPORT.md`](evals/results/REPORT.md).
+
+**Claude judge, mean of 60 quotes per row** (1–3 per dimension, total out of 12). The last column
+needs no judge: it counts final quotes that still contain a cliché from the prompt's ban list.
+
+| Generator | relevance | originality | inspiration | clarity | total | banned cliché in final quote |
+|---|---|---|---|---|---|---|
+| prompt v0 · qwen2.5:1.5b | 2.25 | 1.15 | 1.47 | 1.60 | 6.5 | 3% |
+| prompt v1 · qwen2.5:1.5b (production) | 2.65 | 1.17 | 1.48 | 1.93 | 7.2 | 20% |
+| prompt v1 + gate 3 · qwen2.5:1.5b | 2.58 | 1.15 | 1.40 | 1.78 | 6.9 | 12% |
+| prompt v1 · qwen2.5:3b | 2.75 | 1.28 | 1.52 | 1.82 | 7.4 | 2% |
+| prompt v1 · gemma3:4b | **2.93** | **1.47** | **1.97** | **2.27** | **8.6** | 0% |
+
+What this shows:
+
+1. **The tuned prompt reads clearer. Its relevance gain is unconfirmed.** Paired by motivation, Claude
+   sees v0 → v1 clarity +0.33 (95% CI +0.10 to +0.57) and relevance +0.40 (+0.20 to +0.60). The blind
+   human scores back the clarity gain (+0.67 on the sampled quotes) but not the relevance gain (+0.06).
+2. **At 1.5B, naming the clichés to avoid makes the model use them.** v1 added a ban list ("Empower",
+   "Embrace", "one step at a time"…), and banned clichés in final quotes went from 3% to 20%. The same
+   prompt on 3B and 4B models: 2% and 0%.
+3. **A regex filter (gate 3) treats the symptom, not the quality.** Rejecting drafts with a banned
+   cliché cut them to 12% (only 2 drafts are allowed), Claude scored the quotes no better, and every
+   rejection costs another full generation. It stays off.
+4. **Model size beats prompt work here.** No prompt moved originality or inspiration at 1.5B;
+   `gemma3:4b` is the only model that did. It needs more than 3 GB of RAM, so it doesn't fit the current
+   2 GB server: that is the next decision, not another prompt.
+5. **The prompt fights its own gate.** v1 asks for a concrete reference to the motivation, and the
+   overlap gate rejects drafts that reuse too many of its words: 43% of v1 quotes needed a retry (12% for v0).
+
+**How far to trust the judges.** The 8B judge gave every quote the lowest originality and inspiration
+score, so it can't tell configurations apart. Claude agrees with the human scorer more often than
+llama3 on every dimension, but still only slightly: quadratic-weighted kappa 0.06–0.20, within one
+point 83–93% of the time, and it is much stricter on originality and inspiration. Read the table as
+direction, not as calibrated quality. 30 human-scored quotes from one person is a small check.
+
+An earlier grader (May 2026) reported a large relevance gain. It set the generator model after the
+code had already read it, so it most likely tested the wrong model; [`evals/README.md`](evals/README.md)
+has the details. This harness passes the model explicitly and replaces it.
 
 ## MCP server: use the generator from Claude
 

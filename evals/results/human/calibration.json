@@ -1,0 +1,57 @@
+{
+  "n_items": 30,
+  "judges": {
+    "ollama:llama3:latest": {
+      "relevance": {
+        "n": 30,
+        "exact": 0.36666666666666664,
+        "within_one": 0.8,
+        "kappa": 0.09756097560975607
+      },
+      "originality": {
+        "n": 30,
+        "exact": 0.43333333333333335,
+        "within_one": 0.8,
+        "kappa": 0.0
+      },
+      "inspiration": {
+        "n": 30,
+        "exact": 0.3333333333333333,
+        "within_one": 0.6666666666666666,
+        "kappa": 0.0
+      },
+      "clarity": {
+        "n": 30,
+        "exact": 0.26666666666666666,
+        "within_one": 0.9333333333333333,
+        "kappa": 0.1515151515151516
+      }
+    },
+    "claude:claude-opus-5-5": {
+      "relevance": {
+        "n": 30,
+        "exact": 0.43333333333333335,
+        "within_one": 0.8333333333333334,
+        "kappa": 0.11764705882352944
+      },
+      "originality": {
+        "n": 30,
+        "exact": 0.4,
+        "within_one": 0.9,
+        "kappa": 0.15094339622641506
+      },
+      "inspiration": {
+        "n": 30,
+        "exact": 0.4,
+        "within_one": 0.8333333333333334,
+        "kappa": 0.05714285714285716
+      },
+      "clarity": {
+        "n": 30,
+        "exact": 0.5333333333333333,
+        "within_one": 0.9333333333333333,
+        "kappa": 0.19999999999999996
+      }
+    }
+  }
+}

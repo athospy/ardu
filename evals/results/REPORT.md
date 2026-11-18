@@ -1,6 +1,6 @@
 # Eval report
 
-Generated 2026-11-15 21:41 UTC by `ardu-eval report`.
+Generated 2026-11-18 03:08 UTC by `ardu-eval report`.
 Scores are 1–3 per dimension (mean over cases; each case = mean of its repeats).
 Brackets = 95% bootstrap confidence interval over cases.
 
@@ -89,3 +89,18 @@ Brackets = 95% bootstrap confidence interval over cases.
 | v1 · qwen2.5:3b | 60 | 1.32 | 19 (32%) | 0 (0%) | 1 (2%) | 0.8 |
 
 Times come from a laptop that was also running the judge, so compare them loosely.
+
+## Judge vs. human
+
+30 quotes scored blind by a human. Agreement with each judge (exact match, within one point, quadratic-weighted Cohen's kappa):
+
+| Judge | Dimension | exact | within 1 | kappa |
+|---|---|---|---|---|
+| `ollama:llama3:latest` | relevance | 37% | 80% | 0.10 |
+| `ollama:llama3:latest` | originality | 43% | 80% | 0.00 |
+| `ollama:llama3:latest` | inspiration | 33% | 67% | 0.00 |
+| `ollama:llama3:latest` | clarity | 27% | 93% | 0.15 |
+| `claude:claude-opus-5-5` | relevance | 43% | 83% | 0.12 |
+| `claude:claude-opus-5-5` | originality | 40% | 90% | 0.15 |
+| `claude:claude-opus-5-5` | inspiration | 40% | 83% | 0.06 |
+| `claude:claude-opus-5-5` | clarity | 53% | 93% | 0.20 |
