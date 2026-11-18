@@ -7,7 +7,7 @@ short quotes about it. The quotes come from `qwen2.5:1.5b` running under Ollama 
 server as the API: no hosted LLM, no per-token bill. This repo has the full app, the backend, the
 eval harness used to tune the prompt, and an MCP server so Claude can use the generator directly.
 
-- **App:** Android open beta ([Google Play testing](https://play.google.com/apps/testing/dev.santiagomorel.ardu)), iOS in App Store review. More at [santiagomorel.dev](https://santiagomorel.dev).
+- **App:** in beta on iOS and Android ([Android beta on Google Play](https://play.google.com/apps/testing/dev.santiagomorel.ardu)). More at [santiagomorel.dev](https://santiagomorel.dev).
 - **Evals:** [results and method](#evals-what-prompt-tuning-fixed-and-what-it-didnt) · [full report](evals/results/REPORT.md)
 - **MCP:** [connect it to Claude](#mcp-server-use-the-generator-from-claude)
 

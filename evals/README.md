@@ -55,7 +55,7 @@ See [results/REPORT.md](results/REPORT.md) (generated) and the summary in the
 ## History
 
 `backend/scripts/gradePrompt.js` (May 2026) was the first version: 8 cases, one run, llama3 judge.
-It reported relevance 1.6 → 2.3. It set the generator model through an environment variable
+It reported a relevance gain, but it set the generator model through an environment variable
 *after* the generator module had already read it, so it most likely generated with the model in
 `.env` (llama3 8B) rather than `qwen2.5:1.5b`, with llama3 also judging its own output. This
 harness replaces it and passes the model explicitly.
