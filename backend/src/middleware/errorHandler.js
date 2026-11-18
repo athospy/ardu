@@ -9,7 +9,7 @@ const errorHandler = (err, req, res, next) => {
     method: req.method,
   });
 
-  // Mongoose validation error
+  // Validation error
   if (err.name === 'ValidationError') {
     return res.status(400).json({
       success: false,

@@ -33,17 +33,4 @@ export const ENDPOINTS = {
     DELETE: (id) => `/api/quotes/${id}`,
     UPDATE: (id) => `/api/quotes/${id}`,
   },
-
-  // AI
-  AI: {
-    RECOMMENDED: '/api/ai/recommended-quote',
-    STATUS: '/api/ai/status',
-  },
-
-  // Notifications
-  NOTIFICATIONS: {
-    HISTORY: '/api/notifications/history',
-    STATS: '/api/notifications/stats',
-    TEST: '/api/notifications/test',
-  },
 };

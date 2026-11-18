@@ -1,6 +1,6 @@
 /**
  * Storage Utilities
- * Secure storage for tokens, user data, and app state
+ * Tokens, user data and app state in AsyncStorage (not encrypted)
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';

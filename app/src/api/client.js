@@ -33,7 +33,9 @@ apiClient.interceptors.request.use(
     // Log request in development
     if (__DEV__) {
       const fullUrl = `${config.baseURL}${config.url}`;
-      console.log(`🌐 ${config.method.toUpperCase()} ${fullUrl}`, config.data || '');
+      // Never log passwords or tokens, even in development
+      const { password, refreshToken, ...safeData } = config.data || {};
+      console.log(`🌐 ${config.method.toUpperCase()} ${fullUrl}`, config.data ? safeData : '');
       console.log(`   Base URL: ${config.baseURL}`);
       console.log(`   Endpoint: ${config.url}`);
     }

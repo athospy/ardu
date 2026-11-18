@@ -19,12 +19,6 @@ class AIService {
     const motivation = user.motivation || 'personal growth and success';
     const language = user.language || 'en';
 
-    // Check if Ollama is available
-    // const isAvailable = await testConnection();
-    // if (!isAvailable) {
-    //   throw new Error('AI service is currently unavailable');
-    // }
-
     try {
       // Generate quote using Ollama (returns { text, category, author })
       const quoteData = await generateMotivationalQuote(motivation, language);

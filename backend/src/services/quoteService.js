@@ -355,5 +355,3 @@ class QuoteService {
 }
 
 module.exports = new QuoteService();
-
-// Trigger nodemon restart
