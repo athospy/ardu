@@ -43,9 +43,10 @@ flowchart LR
    - **Similarity gate:** shared words divided by the larger quote's word count, compared against the 200 most recent AI quotes (all users). Above 75%, it's a repeat.
 4. Strip wrapping quotes and save the result.
 
-Known limitation: the gates first normalize text with a regex that drops accented letters (`más` → `ms`,
-`niño` → `nio`), so for Spanish they compare slightly damaged words. Fixing it changes gate behavior,
-so it needs its own eval run first.
+Before the gates, a draft with letters outside the Latin script is also regenerated: `qwen2.5` sometimes
+switches to Chinese mid-quote. (Until November 2026 the gates' text cleanup dropped accented letters,
+`más` → `ms`, and that bug was what happened to catch those drafts. Replaying all 300 eval quotes, fixing it
+changed 2 of 150 Spanish gate decisions, one of them the Chinese draft, so the explicit check replaced it.)
 
 ## Evals: what prompt tuning fixed, and what it didn't
 
@@ -80,8 +81,12 @@ What this shows:
 4. **Model size beats prompt work here.** No prompt moved originality or inspiration at 1.5B;
    `gemma3:4b` is the only model that did. It needs more than 3 GB of RAM, so it doesn't fit the current
    2 GB server: that is the next decision, not another prompt.
-5. **The prompt fights its own gate.** v1 asks for a concrete reference to the motivation, and the
-   overlap gate rejects drafts that reuse too many of its words: 43% of v1 quotes needed a retry (12% for v0).
+5. **The prompt fights its own gate, and the gate is right.** v1 asks for a concrete reference to the
+   motivation, and the overlap gate rejects drafts that reuse too many of its words: 43% of v1 quotes needed
+   a retry (12% for v0). In 60 extra first drafts, a third were rejected, and almost all of them really
+   restate the motivation ("Ahorra para comprar tu primera casa."). Ignoring filler words only cut
+   rejections from 20 to 17, so the gate stays. A retry costs a few seconds in a background job, not user
+   time, and a prompt fix would need its own eval round.
 
 **How far to trust the judges.** The 8B judge gave every quote the lowest originality score and almost
 every quote the lowest inspiration score, so it can't tell configurations apart on those. Claude's

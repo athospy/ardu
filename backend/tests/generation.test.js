@@ -22,6 +22,7 @@ const {
   normalize,
   stripWrappingQuotes,
   usesTemplate,
+  usesForeignScript,
 } = require('../src/config/ollama');
 const { getPrompt, CURRENT_VERSION, VERSIONS } = require('../src/prompts/quote');
 
@@ -35,6 +36,17 @@ beforeEach(() => {
 describe('text helpers', () => {
   test('normalize lowercases and drops punctuation', () => {
     expect(normalize('  Hello, WORLD!  again ')).toBe('hello world again');
+  });
+
+  test('normalize keeps accented letters (Spanish words stay intact)', () => {
+    expect(normalize('Más calma, niño.')).toBe('más calma niño');
+    expect(lexicalOverlap('más calma', 'vivir con más calma')).toBe(1);
+  });
+
+  test('usesForeignScript flags non-Latin letters only', () => {
+    expect(usesForeignScript('Ahorrar月薪购房第一步')).toBe(true);
+    expect(usesForeignScript('¡Vuelve a la cancha, más fuerte que nunca! 100%')).toBe(false);
+    expect(usesForeignScript('Keep going — “one more” try…')).toBe(false);
   });
 
   test('lexicalOverlap = share of the first text\'s words found in the second', () => {
@@ -84,7 +96,7 @@ describe('generateQuoteMultiStep gates', () => {
     const result = await generateQuoteMultiStep('learning to code and switching careers', 'en', []);
     expect(result.text).toBe('Every bug you fix is rent paid on your new career.');
     expect(result.attempts).toBe(1);
-    expect(result.rejections).toEqual({ overlap: 0, similarity: 0, template: 0 });
+    expect(result.rejections).toEqual({ script: 0, overlap: 0, similarity: 0, template: 0 });
     expect(result.promptVersion).toBe(CURRENT_VERSION);
   });
 
@@ -93,7 +105,14 @@ describe('generateQuoteMultiStep gates', () => {
     const result = await generateQuoteMultiStep('learning to code and switching careers', 'en', []);
     expect(result.text).toBe('Every bug you fix pays rent on the future.');
     expect(result.attempts).toBe(2);
-    expect(result.rejections).toEqual({ overlap: 1, similarity: 0, template: 0 });
+    expect(result.rejections).toEqual({ script: 0, overlap: 1, similarity: 0, template: 0 });
+  });
+
+  test('the script check regenerates a draft that switched to another alphabet', async () => {
+    mockDrafts.push('Ahorrar月薪购房第一步，一步一个脚印。', 'Cada peso ahorrado es un ladrillo de tu futuro hogar.');
+    const result = await generateQuoteMultiStep('ahorrar para comprar mi primera casa', 'es', []);
+    expect(result.text).toBe('Cada peso ahorrado es un ladrillo de tu futuro hogar.');
+    expect(result.rejections).toEqual({ script: 1, overlap: 0, similarity: 0, template: 0 });
   });
 
   test('gate 2 regenerates a draft that repeats an existing quote', async () => {
@@ -101,7 +120,7 @@ describe('generateQuoteMultiStep gates', () => {
     mockDrafts.push('Small daily wins build a big new life.', 'Tonight’s practice is tomorrow’s promotion.');
     const result = await generateQuoteMultiStep('getting a better job', 'en', [existing]);
     expect(result.text).toBe('Tonight’s practice is tomorrow’s promotion.');
-    expect(result.rejections).toEqual({ overlap: 0, similarity: 1, template: 0 });
+    expect(result.rejections).toEqual({ script: 0, overlap: 0, similarity: 1, template: 0 });
   });
 
   test('keeps the last draft after the maximum attempts, even if it fails a gate', async () => {

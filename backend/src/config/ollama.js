@@ -73,7 +73,8 @@ function stripWrappingQuotes(text) {
 function normalize(text) {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
+    // Keep letters of any alphabet (más, niño), drop punctuation and symbols
+    .replace(/[^\p{L}\p{N}\s]/gu, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -88,6 +89,15 @@ function similarity(a, b) {
   const setB = new Set(normalize(b).split(' '));
   const intersection = [...setA].filter(x => setB.has(x)).length;
   return intersection / Math.max(setA.size, setB.size);
+}
+
+/**
+ * True when the text contains letters outside the Latin script (e.g. Chinese).
+ * qwen2.5 sometimes switches language mid-quote; Ardu writes only English and
+ * Spanish, so such a draft is regenerated.
+ */
+function usesForeignScript(text) {
+  return /[^\p{Script=Latin}\p{N}\p{P}\p{S}\s]/u.test(text);
 }
 
 /**
@@ -500,6 +510,8 @@ const testConnection = async () => {
  *
  * Each draft passes two gates; a draft that fails one is regenerated, up to
  * MAX_ATTEMPTS drafts in total (the last draft is kept even if it fails):
+ *   Script check:        letters outside the Latin script (the model switched
+ *                        language, e.g. to Chinese).
  *   Gate 1 (overlap):    share of the draft's words that also appear in the
  *                        motivation. High = the model just echoed the input.
  *   Gate 2 (similarity): shared words / words in the larger of the two texts,
@@ -513,7 +525,7 @@ const testConnection = async () => {
  * (used by the eval harness and the MCP demo); options.templateGate turns
  * gate 3 on.
  *
- * Returns: { text, attempts, rejections: { overlap, similarity, template },
+ * Returns: { text, attempts, rejections: { script, overlap, similarity, template },
  *            durationMs, model, promptVersion, templateGate }
  */
 async function generateQuoteMultiStep(motivation, language = 'en', existingQuotes = [], options = {}) {
@@ -526,7 +538,7 @@ async function generateQuoteMultiStep(motivation, language = 'en', existingQuote
     const start = Date.now();
     let text;
     let attempts = 0;
-    const rejections = { overlap: 0, similarity: 0, template: 0 };
+    const rejections = { script: 0, overlap: 0, similarity: 0, template: 0 };
 
     logger.info(`🎯 Generating quote for: "${motivation.substring(0, 30)}..."`);
 
@@ -536,6 +548,13 @@ async function generateQuoteMultiStep(motivation, language = 'en', existingQuote
       text = await generateQuoteText(motivation, language, { promptVersion, model });
       logger.info(`   Generated: "${text}"`);
       attempts++;
+
+      // Script check: the model switched to another alphabet (Ardu is English/Spanish only)
+      if (usesForeignScript(text) && attempts < MAX_ATTEMPTS) {
+        logger.info('   ⚠️  Non-Latin script in the draft, regenerating...');
+        rejections.script++;
+        continue;
+      }
       
       // Gate 1: Check lexical overlap with motivation (prompt leakage)
       const overlap = lexicalOverlap(text, motivation);
@@ -635,11 +654,13 @@ module.exports = {
   ollama,
   generateMotivationalQuote, // Keep old function for compatibility
   generateQuoteMultiStep, // New multi-step function
+  generateQuoteText, // one raw draft, no gates (used by eval experiments)
   generateBatchQuotes,
   testConnection,
   similarity, // Export for testing
   lexicalOverlap,
   normalize,
   usesTemplate,
+  usesForeignScript,
   stripWrappingQuotes,
 };
